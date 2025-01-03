@@ -1,8 +1,6 @@
 import gradio as gr
 
-def get_upload(file):
-    print(file)
-    return gr.update(value=None)
+from upload import get_upload
 
 with gr.Blocks() as demo:
     with gr.Row():
@@ -11,7 +9,7 @@ with gr.Blocks() as demo:
             doc_upload = gr.File(label="Upload a doc")
             doc_upload_btn = gr.Button("Upload")
         with gr.Column(scale=2, min_width=400):
-            chat = gr.Chatbot()
+            chat = gr.Chatbot(type="messages")
             query_input = gr.Text(label="Chat input")
             btn = gr.Button("Go")
     
