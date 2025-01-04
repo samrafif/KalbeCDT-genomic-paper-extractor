@@ -64,6 +64,9 @@ detection_transform = transforms.Compose(
 )
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model = AutoModelForObjectDetection.from_pretrained("microsoft/table-transformer-detection", revision="no_timm").to(device)
 
-ocr = DocTR()
+def init():
+    model = AutoModelForObjectDetection.from_pretrained("microsoft/table-transformer-detection", revision="no_timm").to(device)
+
+    ocr = DocTR()
+    return ocr, model
