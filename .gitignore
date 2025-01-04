@@ -2,3 +2,5 @@ uploads
 GENME_1.0
 *.pyc
 .vscode
+.env
+chroma_langchain_db
