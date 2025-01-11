@@ -3,3 +3,4 @@ GENME_1.0
 .vscode
 .env
 chroma_langchain_db
+*.pdf
