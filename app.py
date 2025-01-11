@@ -9,10 +9,10 @@ from upload import Uploader
 
 load_dotenv()
 
-vec_store = Store("main", doc_k=5)
+vec_store = Store("main", doc_k=2)
 vec_store.setup()
 
-q_answerer = Answerer(vec_store)
+q_answerer = Answerer(vec_store, model_name="Qwen/Qwen2.5-7B-Instruct",use_api=False)
 pdf_processor = ProcessorPDF()
 doc_uploader = Uploader(pdf_processor, vec_store)
 
@@ -52,5 +52,5 @@ with gr.Blocks(fill_height=True) as demo:
 
 # Make it so every message makes a query, but filter for duplicate pages
 
-demo.launch(share=True)
+demo.launch(share=False)
 

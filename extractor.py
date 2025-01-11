@@ -4,6 +4,7 @@ from typing import Dict, List
 import warnings
 
 from langchain_chroma import Chroma
+from langchain_huggingface.llms import HuggingFacePipeline
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEmbeddings, HuggingFaceEndpoint
 from langchain_core.messages.base import BaseMessage
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
@@ -64,16 +65,30 @@ class Answerer:
             temperature=0.1,
             top_p=0.7,
             max_tokens=2048,
+            use_api=True
         ):
             self.store = vec_store
-            llm = HuggingFaceEndpoint(
-                repo_id=model_name,
-                model_kwargs={"max_length":max_tokens},
-                max_new_tokens=max_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                huggingfacehub_api_token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+
+            llm = HuggingFacePipeline.from_model_id(
+                model_id=model_name,
+                task="text-generation",
+                pipeline_kwargs={
+                    "max_new_tokens": max_tokens,
+                    "temperature":temperature,
+                    "top_p": top_p
+                },
             )
+
+            if use_api:
+                llm = HuggingFaceEndpoint(
+                    repo_id=model_name,
+                    model_kwargs={"max_length":max_tokens},
+                    max_new_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    huggingfacehub_api_token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+                )
+                
             self.model = ChatHuggingFace(llm=llm)
 
     @staticmethod
@@ -95,7 +110,16 @@ class Answerer:
     def answer_with_search(self, query: str):
         # TODO: Include the tables extracted
         search_results = self.store.similarity_search(query)
-        search_results_str = "\n".join([res.page_content for res in search_results])
+        
+        citation_mapping = {}
+        for idx, res in enumerate(search_results):
+            citation_mapping[os.path.basename(res.metadata['source'])+str(res.metadata['page'])] = f"0{idx}"
+
+        # NOTE: 😭😭😭😭
+        #search_results_str = "\n".join([
+        #    f"=== ID: 'CTX_{citation_mapping[os.path.basename(res.metadata['source'])+str(res.metadata['page'])]}' START ===\n{res.page_content}\n=== ID: 'CTX_{citation_mapping[os.path.basename(res.metadata['source'])+str(res.metadata['page'])]}' END ===" for res in search_results])
+        #file_names = set([os.path.basename(res.metadata['source']) for res in search_results])
+        search_results_str = "\n\n".join([res.page_content for res in search_results])
 
         system_prompt = MAIN_SYSTEM_PROMPT.format(context=search_results_str)
         history = [
@@ -109,7 +133,7 @@ class Answerer:
             {"role":"user", "content": query},
             {"role":"assistant", "content": result.content}
         ]
-
+        print(history)
         return history, search_results
 
     def answer_without_search(self, query: str, history: List[Dict]):
