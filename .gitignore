@@ -4,3 +4,4 @@ GENME_1.0
 .env
 chroma_langchain_db
 *.pdf
+.gradio
