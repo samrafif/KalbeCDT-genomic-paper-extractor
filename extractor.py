@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import os
+import re
 from typing import Dict, List
 import warnings
 
@@ -11,6 +12,8 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain.docstore.document import Document
 
 from prompts import MAIN_SYSTEM_PROMPT
+
+CITATIONS_REGEX = r"(\b\d{2}\.\d{2}\b)"
 
 
 class Store:
@@ -69,16 +72,6 @@ class Answerer:
         ):
             self.store = vec_store
 
-            llm = HuggingFacePipeline.from_model_id(
-                model_id=model_name,
-                task="text-generation",
-                pipeline_kwargs={
-                    "max_new_tokens": max_tokens,
-                    "temperature":temperature,
-                    "top_p": top_p
-                },
-            )
-
             if use_api:
                 llm = HuggingFaceEndpoint(
                     repo_id=model_name,
@@ -88,7 +81,17 @@ class Answerer:
                     top_p=top_p,
                     huggingfacehub_api_token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
                 )
-                
+            else:
+                llm = HuggingFacePipeline.from_model_id(
+                model_id=model_name,
+                task="text-generation",
+                pipeline_kwargs={
+                    "max_new_tokens": max_tokens,
+                    "temperature":temperature,
+                    "top_p": top_p
+                    },
+                )
+            
             self.model = ChatHuggingFace(llm=llm)
 
     @staticmethod
@@ -111,9 +114,7 @@ class Answerer:
         # TODO: Include the tables extracted
         search_results = self.store.similarity_search(query)
         
-        citation_mapping = {}
-        for idx, res in enumerate(search_results):
-            citation_mapping[os.path.basename(res.metadata['source'])+str(res.metadata['page'])] = f"0{idx}"
+        citation_mapping = self.store.store.get()
 
         # NOTE: 😭😭😭😭
         #search_results_str = "\n".join([
@@ -127,11 +128,20 @@ class Answerer:
             HumanMessage(content=query)
         ]
         result = self.model.invoke(history)
+        citations = [res.group() for res in re.finditer(CITATIONS_REGEX, result.content, re.MULTILINE)]
+        cits_pages = set([int(c.split(".")[0])-1 for c in citations])
+
+        cits = ""
+        for c in cits_pages:
+            try:
+                cits += f"*{citation_mapping['ids'][c]}*\n"
+            except KeyError:
+                cits += f"{c} - N/A\n"
 
         history = [
             {"role":"system", "content": system_prompt},
             {"role":"user", "content": query},
-            {"role":"assistant", "content": result.content}
+            {"role":"assistant", "content": result.content + "\n\n**Pages Cited:**\n" + cits}
         ]
         print(history)
         return history, search_results

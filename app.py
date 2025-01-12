@@ -9,10 +9,10 @@ from upload import Uploader
 
 load_dotenv()
 
-vec_store = Store("main", doc_k=2)
+vec_store = Store("main", doc_k=5)
 vec_store.setup()
 
-q_answerer = Answerer(vec_store, model_name="Qwen/Qwen2.5-7B-Instruct",use_api=False)
+q_answerer = Answerer(vec_store)
 pdf_processor = ProcessorPDF()
 doc_uploader = Uploader(pdf_processor, vec_store)
 
@@ -35,6 +35,7 @@ with gr.Blocks(fill_height=True) as demo:
     # Genomics Answering System
     ## **Every first question is used for the document query, and all questions after use the first question's context**
     """)
+    # btw ini modelnya pake mistralai/Mixtral-8x7B-Instruct-v0.1 yg nilai IFEval nya 55.9% jadi wajar low quality xd
     with gr.Row():
         with gr.Column(scale=2, min_width=400):
             chat = gr.Chatbot(type="messages")
