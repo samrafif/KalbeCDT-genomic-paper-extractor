@@ -134,7 +134,7 @@ class Answerer:
         cits = ""
         for c in cits_pages:
             try:
-                cits += f"*{citation_mapping['ids'][c]}*\n"
+                cits += f"{c:0>2}.xx*{citation_mapping['ids'][c]}*\n"
             except IndexError:
                 cits += f"{c} - N/A\n"
 
