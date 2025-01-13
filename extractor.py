@@ -13,7 +13,7 @@ from langchain.docstore.document import Document
 
 from prompts import MAIN_SYSTEM_PROMPT
 
-CITATIONS_REGEX = r"(\b\d{2}\.\d{2}\b)"
+CITATIONS_REGEX = r"(\b\d{2}\_\d{2}\b)"
 
 
 class Store:
@@ -129,12 +129,12 @@ class Answerer:
         ]
         result = self.model.invoke(history)
         citations = [res.group() for res in re.finditer(CITATIONS_REGEX, result.content, re.MULTILINE)]
-        cits_pages = set([int(c.split(".")[0])-1 for c in citations])
+        cits_pages = set([int(c.split("_")[0])-1 for c in citations])
 
         cits = ""
         for c in cits_pages:
             try:
-                cits += f"{c:0>2}.xx*{citation_mapping['ids'][c]}*\n"
+                cits += f"{c:0>2}_xx *{citation_mapping['ids'][c]}*\n"
             except IndexError:
                 cits += f"{c} - N/A\n"
 

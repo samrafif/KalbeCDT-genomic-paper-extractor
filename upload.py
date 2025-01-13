@@ -80,7 +80,7 @@ class Uploader:
             merged_sentences = self.merge_the_shorties(sentences,4)
 
             for idx, sent in enumerate(merged_sentences):
-                sentenced_page_content += f"<SENT {(idxo+1):0>2}.{(idx+1):0>2}>\n{sent}\n</SENT {(idxo+1):0>2}.{(idx+1):0>2}>\n"
+                sentenced_page_content += f"<SENT {(idxo+1):0>2}_{(idx+1):0>2}>\n{sent}\n</SENT {(idxo+1):0>2}_{(idx+1):0>2}>\n"
 
             raw.page_content = sentenced_page_content
             sentenced_pages.append(raw)
