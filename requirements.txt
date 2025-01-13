@@ -13,3 +13,5 @@ pypdf==5.1.0
 stqdm==0.0.5
 transformers==4.47.1
 pymupdf>=1.25.1,<2.0.0
+nltk>=3.9.1,<4.0.0
+python-dotenv>=1.0.1,<2.0.0 # Dev-only dependencies, include if needed
