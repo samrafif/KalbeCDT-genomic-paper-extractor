@@ -65,7 +65,7 @@ class Answerer:
             self,
             vec_store: Store,
             model_name="mistralai/Mixtral-8x7B-Instruct-v0.1",
-            temperature=0.1,
+            temperature=0.05,
             top_p=0.7,
             max_tokens=2048,
             use_api=True
@@ -135,7 +135,7 @@ class Answerer:
         for c in cits_pages:
             try:
                 cits += f"*{citation_mapping['ids'][c]}*\n"
-            except KeyError:
+            except IndexError:
                 cits += f"{c} - N/A\n"
 
         history = [
