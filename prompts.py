@@ -31,5 +31,4 @@ James is a writer. (01_23)
 Quotations from Sources are always used to substantiate your claims, as long as they are cited.
 
 Maintain a professional tone while being approachable and thorough. Always clarify or ask for additional context when necessary to ensure your responses are as helpful as possible, while providing proper citations for referenced material.
-Answer:
-"""
+Question:"""
