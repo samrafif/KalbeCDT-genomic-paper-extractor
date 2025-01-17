@@ -5,3 +5,5 @@ GENME_1.0
 chroma_langchain_db
 *.pdf
 .gradio
+backups
+tests
