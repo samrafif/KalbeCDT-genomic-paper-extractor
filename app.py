@@ -18,7 +18,7 @@ doc_uploader = Uploader(pdf_processor, vec_store)
 
 def process_query(message, history, context_docs):
     if len(history) == 0:
-        result, new_context_docs = q_answerer.answer_with_search(message)
+        result, new_context_docs, _ = q_answerer.answer_with_search(message)
         new_context_docs = [
             {"id":f"{os.path.basename(res.metadata['source'])}_{res.metadata['page']}","text":res.page_content}
             for res in new_context_docs

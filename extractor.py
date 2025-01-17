@@ -1,7 +1,7 @@
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import os
 import re
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import warnings
 
 from langchain_chroma import Chroma
@@ -16,6 +16,7 @@ from prompts import MAIN_SYSTEM_PROMPT
 CITATIONS_REGEX = r"(\b\d{2}\_\d{2}\b)"
 
 
+# TODO: DOCUMENT AND ADD TYPE HINTS TO ALL FUNCTIONS & CLASSES
 class Store:
     def __init__(
             self, 
@@ -64,17 +65,21 @@ class Answerer:
     def __init__(
             self,
             vec_store: Store,
-            model_name="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            model="NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+            use_api=True,
             temperature=0.05,
             top_p=0.7,
             max_tokens=2048,
-            use_api=True
         ):
             self.store = vec_store
 
+            if not isinstance(model, str):
+                self.model = model
+                return
+
             if use_api:
                 llm = HuggingFaceEndpoint(
-                    repo_id=model_name,
+                    repo_id=model,
                     model_kwargs={"max_length":max_tokens},
                     max_new_tokens=max_tokens,
                     temperature=temperature,
@@ -83,7 +88,7 @@ class Answerer:
                 )
             else:
                 llm = HuggingFacePipeline.from_model_id(
-                model_id=model_name,
+                model_id=model,
                 task="text-generation",
                 pipeline_kwargs={
                     "max_new_tokens": max_tokens,
@@ -110,9 +115,12 @@ class Answerer:
         return history_langchain, history
 
     # TODO: Perhaps make it so it does a search everytime it gets a query? is that better? leaving for future me to handle.
-    def answer_with_search(self, query: str):
+    def answer_with_search(self, query: str, ctx_docs: List[Document]=None, show_cits: bool=True) -> Tuple[List[Dict], List[Document], List[str]]:
         # TODO: Include the tables extracted
-        search_results = self.store.similarity_search(query)
+        
+        search_results = ctx_docs
+        if ctx_docs is None:
+            search_results = self.store.similarity_search(query)
         
         citation_mapping = self.store.store.get()
 
@@ -130,21 +138,23 @@ class Answerer:
         result = self.model.invoke(history)
         citations = [res.group() for res in re.finditer(CITATIONS_REGEX, result.content, re.MULTILINE)]
         cits_pages = set([int(c.split("_")[0])-1 for c in citations])
+        citations_pages_ids = []
 
         cits = ""
         for c in cits_pages:
             try:
-                cits += f"{c:0>2}_xx *{citation_mapping['ids'][c]}*\n"
+                cits += f"{c+1:0>2}_xx *{citation_mapping['ids'][c]}*\n"
+                citations_pages_ids.append(citation_mapping['ids'][c])
             except IndexError:
-                cits += f"{c} - N/A\n"
+                cits += f"{c+1} - N/A\n"
 
         history = [
             {"role":"system", "content": system_prompt},
             {"role":"user", "content": query},
-            {"role":"assistant", "content": result.content + "\n\n**Pages Cited:**\n" + cits}
+            {"role":"assistant", "content": result.content + (("\n\n**Pages Cited:**\n" + cits) if show_cits else "")}
         ]
-        print(history)
-        return history, search_results
+
+        return history, search_results, citations_pages_ids
 
     def answer_without_search(self, query: str, history: List[Dict]):
         history_langchain, history = self.update_history(query, history)
