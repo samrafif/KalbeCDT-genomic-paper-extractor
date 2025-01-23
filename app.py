@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 
 import gradio as gr
+from langchain_groq import ChatGroq
 
 from extractor import Answerer, Store
 from pdf_processor.pdf_processor import ProcessorPDF
@@ -9,10 +10,16 @@ from upload import Uploader
 
 load_dotenv()
 
-vec_store = Store("main", doc_k=5)
+vec_store = Store("main", doc_k=3)
 vec_store.setup()
 
-q_answerer = Answerer(vec_store)
+llm = ChatGroq(
+    model_name="llama-3.1-8b-instant",
+    temperature=0.3,
+    api_key=os.environ["GROQ_API_KEY"]
+)
+
+q_answerer = Answerer(vec_store, model=llm)
 pdf_processor = ProcessorPDF()
 doc_uploader = Uploader(pdf_processor, vec_store)
 

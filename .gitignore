@@ -7,3 +7,4 @@ chroma_langchain_db
 .gradio
 backups
 tests
+results
